@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: dd3bbc52e5c632e4a9a71baa5120a5ec
+timeCreated: 1488449362
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: ZAPPAT
+  fontNames:
+  - ZAPPAT
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
