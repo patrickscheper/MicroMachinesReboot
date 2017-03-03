@@ -6,20 +6,41 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
 
+
+    private void OnEnable()
+    {
+
+    }
+
+    private void OnDisable()
+    {
+
+    }
+
     public bool runGame = false;
     public bool runMenu = true;
 
     public List<Sprite> emblems;
     public Image[] positionImages;
+
+    public Text[] playerLaps;
+
     public GameObject[] mainCanvasItems;
     public Text text;
 
-    public float timeTakenDuringLerp = 1f;
-    public float _timeStartedLerping;
+ //   public float timeTakenDuringLerp = 1f;
+ //   public float _timeStartedLerping;
+
+    public Button playButton;
+    public GameObject controllerWarning;
+
+    public int maxLap = 1;
 
 
     public int u = 0;
     public float speed;
+
+    public bool showTime;
 
     public Transform currentWaypoint;
     public Transform[] waypoints;
@@ -28,21 +49,30 @@ public class GameManager : MonoBehaviour
 
 
     public GameObject[] CarReference;
-    public List<SimpleCarController> players;
+  //  public List<SimpleCarController> players;
     public List<Camera> cameras;
 
-    public int amountPlayers = 4;
+    public int amountPlayers = 2;
+
+    public Text TimePlaying;
+
+    public float startTime;
+    public float elapsedTime;
+
+    public Text counterText;
+    public bool goCounter = false;
+    public float counter = 30;
 
     public Transform[] startingPositions;
 
     public GameObject[] checkPoints;
-    public int[] currentLap;
-    public int[] currentCheckpoint;
-    public float[] distanceNextWaypoint;
+  //  public int[] currentLap;
+ //   public int[] currentCheckpoint;
+ //   public float[] distanceNextWaypoint;
 
-    public SimpleCarController player1;
-    public SimpleCarController player2;
-    public GameObject firstPlace;
+ //   public SimpleCarController player1;
+ //  public SimpleCarController player2;
+//    public GameObject firstPlace;
 
 
     float t;
@@ -53,24 +83,40 @@ public class GameManager : MonoBehaviour
 
     public void Awake()
     {
+
+        if (Input.GetJoystickNames().Length <= 0)
+        {
+            controllerWarning.SetActive(true);
+            playButton.interactable = false;
+
+        }
+        else if (Input.GetJoystickNames().Length > 0)
+        {
+            controllerWarning.SetActive(false);
+            playButton.interactable = true;
+        }
     }
 
-
-    public void Start()
-    {
-        // set up the car objects
-
-
-    }
-
-    // this gets called every frame
     public void ManualUpdate()
     {
+        
+
+        for (int i = 0; i < allCars.Count; i++)
+        {
+           playerLaps[i].text = "LAP: " + allCars[i].currentLap.ToString() + " / " + maxLap.ToString();
+        }
+
         foreach (SimpleCarController car in allCars)
         {
+            if (car.currentLap == maxLap)
+            {
+                car.enabled = false;
+                goCounter = true;
+            }
+
             carOrder[car.GetCarPosition(allCars.ToArray()) - 1] = car;
             positionImages[car.GetCarPosition(allCars.ToArray()) - 1].sprite = car.emblem;
-        
+            
 
         }
         
@@ -79,6 +125,28 @@ public class GameManager : MonoBehaviour
 
     private void FixedUpdate()
     {
+
+        if(showTime)
+        {
+            elapsedTime = Time.time - startTime;
+            TimePlaying.text = (elapsedTime / 60).ToString("00") + ":" + (elapsedTime % 60).ToString("00");
+        }
+
+       if(goCounter)
+        {
+            counter = counter - Time.deltaTime;
+            counterText.text = "Remainging time: " + (counter / 60).ToString("00") + ":" + (counter % 60).ToString("00");
+
+            if (counter <= 0)
+            {
+                
+                OnMenu();
+                goCounter = false;
+            }
+
+        }
+       
+
         if (runMenu)
         {
 
@@ -119,22 +187,37 @@ public class GameManager : MonoBehaviour
 
     public void OnMenu()
     {
+        showTime = false;
+        runGame = false;
+        runMenu = true;
         currentWaypoint = waypoints[0];
+
+        foreach(SimpleCarController car in carOrder)
+        {
+            Destroy(car.cameraParent);
+            Destroy(car.gameObject);
+        }
+        MenuCamera.GetComponent<Camera>().enabled = true;
+
+        CancelInvoke();
+
+        mainCanvasItems[0].SetActive(true);
+        mainCanvasItems[2].SetActive(false);
+
+
+
 
     }
 
     public void OnGame()
     {
-
         mainCanvasItems[0].SetActive(false);
 
 
-        Debug.Log(Input.GetJoystickNames().Length);
         if (runGame)
         {
             if (Input.GetJoystickNames().Length < amountPlayers)
             {
-                print("Does this happen?");
                 int i = 0;
                 foreach (string gamepad in Input.GetJoystickNames())
                 {
@@ -143,7 +226,7 @@ public class GameManager : MonoBehaviour
                     carController.m_PlayerNumber = i;
                     carController.lastWaypoint = checkPoints[0].transform;
                     emblems.Add(carController.emblem);
-                    players.Add(carController); 
+              //      players.Add(carController); 
                     allCars.Add(carController);
                     cameras.Add(newCar.GetComponentInChildren<Camera>());
                     i++;
@@ -163,6 +246,7 @@ public class GameManager : MonoBehaviour
                         print("Three players are connected, setting up cameras.");
 
                         positionImages[3].gameObject.SetActive(false);
+                        playerLaps[3].gameObject.SetActive(false);
                         cameras[0].rect = new Rect(0, .5f, .5f, .5f);
                         cameras[1].rect = new Rect(.5f, .5f, .5f, .5f);
                         cameras[2].rect = new Rect(0, 0, 1, .5f);
@@ -171,6 +255,8 @@ public class GameManager : MonoBehaviour
                         print("Two players are connected, setting up cameras.");
                         positionImages[3].gameObject.SetActive(false);
                         positionImages[2].gameObject.SetActive(false);
+                        playerLaps[3].gameObject.SetActive(false);
+                        playerLaps[2].gameObject.SetActive(false);
                         cameras[0].rect = new Rect(0, 0, .5f, 1);
                         cameras[1].rect = new Rect(.5f, 0, .5f, 1);
 
@@ -179,6 +265,9 @@ public class GameManager : MonoBehaviour
                         positionImages[3].gameObject.SetActive(false);
                         positionImages[2].gameObject.SetActive(false);
                         positionImages[1].gameObject.SetActive(false);
+                        playerLaps[3].gameObject.SetActive(false);
+                        playerLaps[2].gameObject.SetActive(false);
+                        playerLaps[1].gameObject.SetActive(false);
                         print("One player are connected, setting up cameras.");
 
                         cameras[0].rect = new Rect(0, 0, 1, 1);
@@ -198,7 +287,7 @@ public class GameManager : MonoBehaviour
 
 
             carOrder = new SimpleCarController[allCars.Count];
-            foreach (SimpleCarController car in players)
+            foreach (SimpleCarController car in allCars)
                 car.enabled = false;
 
             mainCanvasItems[2].SetActive(true);
@@ -230,10 +319,13 @@ public class GameManager : MonoBehaviour
         text.text = "";
         print("Test");
 
-        foreach (SimpleCarController car in players)
+        foreach (SimpleCarController car in allCars)
             car.enabled = true;
 
         mainCanvasItems[1].SetActive(false);
+        showTime = true;
+        startTime = Time.time;
+
 
         yield return null;
 

@@ -21,6 +21,8 @@ public class SimpleCarController : MonoBehaviour
     public float DeathZone = -0.1f;
     public float AirZone;
 
+    public GameObject cameraParent;
+
     public bool isSpawning = false;
     public float bumpForce = 20;
     public ParticleSystem explosionParticle;
@@ -61,6 +63,7 @@ public class SimpleCarController : MonoBehaviour
         return position;
     }
 
+    
 
 
 private void OnEnable()
@@ -71,6 +74,18 @@ private void OnEnable()
         m_MovementInputValue = 0f;
         m_TurnInputValue = 0f;
 
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Killer")
+            CancelInvoke();
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.tag == "Killer")
+            InvokeRepeating("CreateNewSpawnPoint", 0, 5);
     }
 
 
