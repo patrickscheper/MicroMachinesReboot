@@ -2,54 +2,41 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    public bool runMenu;
+    public bool isGameRunning;
+    public GameObject[] canvasObjects;
 
+    public bool[] finishedCars;
 
-    private void OnEnable()
-    {
-
-    }
-
-    private void OnDisable()
-    {
-
-    }
-
-    public bool runGame = false;
-    public bool runMenu = true;
-
-    public List<Sprite> emblems;
-    public Image[] positionImages;
-
-    public Text[] playerLaps;
-
-    public GameObject[] mainCanvasItems;
-    public Text text;
-
- //   public float timeTakenDuringLerp = 1f;
- //   public float _timeStartedLerping;
-
-    public Button playButton;
-    public GameObject controllerWarning;
+    public GameObject[] CarReference;
 
     public int maxLap = 1;
 
+    [HideInInspector]
+    public List<CarController> allCars;
+    [HideInInspector]
+    public CarController[] carOrder;
 
-    public int u = 0;
-    public float speed;
 
+    public Text[] playerLaps;
+
+    public List<Sprite> emblems;
+
+    public MenuManager menuManager;
+
+    public List<Sprite> playerEmblems;
+    public Image[] EmblemOrder;
+    public Image[] positionImages;
+    public Transform[] carCheckpoints;
+
+
+    public Text BeginTimer;
     public bool showTime;
 
-    public Transform currentWaypoint;
-    public Transform[] waypoints;
-    public Transform[] thingsToLookAt;
-    public GameObject MenuCamera;
-
-
-    public GameObject[] CarReference;
-  //  public List<SimpleCarController> players;
     public List<Camera> cameras;
 
     public int amountPlayers = 2;
@@ -63,170 +50,47 @@ public class GameManager : MonoBehaviour
     public bool goCounter = false;
     public float counter = 30;
 
+
     public Transform[] startingPositions;
 
-    public GameObject[] checkPoints;
-  //  public int[] currentLap;
- //   public int[] currentCheckpoint;
- //   public float[] distanceNextWaypoint;
+    //   public GameObject[] checkPoints;
 
- //   public SimpleCarController player1;
- //  public SimpleCarController player2;
-//    public GameObject firstPlace;
-
-
-    float t;
-    public List<SimpleCarController> allCars;
-    public SimpleCarController[] carOrder;
-
-    private int i = 0;
-
-    public void Awake()
+    void Awake()
     {
 
-        if (Input.GetJoystickNames().Length <= 0)
-        {
-            controllerWarning.SetActive(true);
-            playButton.interactable = false;
 
-        }
-        else if (Input.GetJoystickNames().Length > 0)
-        {
-            controllerWarning.SetActive(false);
-            playButton.interactable = true;
-        }
-    }
-
-    public void ManualUpdate()
-    {
-        
-
-        for (int i = 0; i < allCars.Count; i++)
-        {
-           playerLaps[i].text = "LAP: " + allCars[i].currentLap.ToString() + " / " + maxLap.ToString();
-        }
-
-        foreach (SimpleCarController car in allCars)
-        {
-            if (car.currentLap == maxLap)
-            {
-                car.enabled = false;
-                goCounter = true;
-            }
-
-            carOrder[car.GetCarPosition(allCars.ToArray()) - 1] = car;
-            positionImages[car.GetCarPosition(allCars.ToArray()) - 1].sprite = car.emblem;
-            
-
-        }
-        
+        amountPlayers = Input.GetJoystickNames().Length;
+        finishedCars = new bool[amountPlayers];
 
     }
 
-    private void FixedUpdate()
+    private void OnEnable()
     {
 
-        if(showTime)
+
+        //set timer, lap setup enabled, so the player can see.
+        foreach (GameObject item in canvasObjects)
         {
-            elapsedTime = Time.time - startTime;
-            TimePlaying.text = (elapsedTime / 60).ToString("00") + ":" + (elapsedTime % 60).ToString("00");
+            item.SetActive(true);
         }
 
-       if(goCounter)
+        if(isGameRunning == true)
         {
-            counter = counter - Time.deltaTime;
-            counterText.text = "Remainging time: " + (counter / 60).ToString("00") + ":" + (counter % 60).ToString("00");
-
-            if (counter <= 0)
-            {
-                
-                OnMenu();
-                goCounter = false;
-            }
-
-        }
-       
-
-        if (runMenu)
-        {
-
-            float t = speed * Time.deltaTime;
-
-            MenuCamera.transform.position = Vector3.MoveTowards(MenuCamera.transform.position, currentWaypoint.transform.position, t);
-
-            //       Vector3 direction = thingsToLookAt[u].position - MenuCamera.transform.position;
-            Quaternion toRotation = Quaternion.LookRotation(thingsToLookAt[u].position - MenuCamera.transform.position);
-            MenuCamera.transform.rotation = Quaternion.Slerp(MenuCamera.transform.rotation, toRotation, 0.01f * Time.time);
-
-
-
-            if (Vector3.Distance(MenuCamera.transform.position, currentWaypoint.transform.position) <= 0.2f)
-            {
-                u++;
-                if (u == waypoints.Length)
-                {
-                    currentWaypoint = waypoints[0];
-                    u = 0;
-                }
-                currentWaypoint = waypoints[u];
-
-
-
-            }
-        }
-
-    }
-
-    public void OnPlay()
-    {
-        runGame = true;
-        runMenu = false;
-        OnGame();
-
-    }
-
-    public void OnMenu()
-    {
-        showTime = false;
-        runGame = false;
-        runMenu = true;
-        currentWaypoint = waypoints[0];
-
-        foreach(SimpleCarController car in carOrder)
-        {
-            Destroy(car.cameraParent);
-            Destroy(car.gameObject);
-        }
-        MenuCamera.GetComponent<Camera>().enabled = true;
-
-        CancelInvoke();
-
-        mainCanvasItems[0].SetActive(true);
-        mainCanvasItems[2].SetActive(false);
-
-
-
-
-    }
-
-    public void OnGame()
-    {
-        mainCanvasItems[0].SetActive(false);
-
-
-        if (runGame)
-        {
-            if (Input.GetJoystickNames().Length < amountPlayers)
+            print("Waarom werkte dit niet?");
+            if (Input.GetJoystickNames().Length <= amountPlayers)
             {
                 int i = 0;
                 foreach (string gamepad in Input.GetJoystickNames())
                 {
                     GameObject newCar = Instantiate(CarReference[i], startingPositions[i].position, startingPositions[i].rotation);
-                    SimpleCarController carController = newCar.GetComponent<SimpleCarController>();
-                    carController.m_PlayerNumber = i;
-                    carController.lastWaypoint = checkPoints[0].transform;
+                    CarController carController = newCar.GetComponent<CarController>();
+                    carController.checkpointChecks = new bool[carCheckpoints.Length];
+                    carController.playerNumber = i;
+                    carController.lastWaypoint = carCheckpoints[0];
+
+                    //    carController.lastWaypoint = checkPoints[0].transform;
                     emblems.Add(carController.emblem);
-              //      players.Add(carController); 
+                    //      players.Add(carController); 
                     allCars.Add(carController);
                     cameras.Add(newCar.GetComponentInChildren<Camera>());
                     i++;
@@ -277,53 +141,161 @@ public class GameManager : MonoBehaviour
                         print("There are no controllers added, so no cars will be instantiated nor will the camera setup process start.");
                         break;
                 }
-
-                MenuCamera.GetComponent<Camera>().enabled = false;
-
-
             }
             else
                 Debug.Log("No controllers found, game will not function like it should.");
 
 
-            carOrder = new SimpleCarController[allCars.Count];
-            foreach (SimpleCarController car in allCars)
+            carOrder = new CarController[allCars.Count];
+            foreach (CarController car in allCars)
                 car.enabled = false;
 
-            mainCanvasItems[2].SetActive(true);
 
             InvokeRepeating("ManualUpdate", 0.5f, 0.5f);
             StartCoroutine("Countdown");
+
+        } 
+}
+
+    
+    private void OnDisable()
+    {
+
+        //If match is done, reset and disable canvas properties.
+            foreach(GameObject item in canvasObjects)
+            {
+                item.SetActive(false);
+            }
+
+        showTime = false;
+
+
+    }
+
+
+
+  //  public List<CarController> players;
+
+
+
+
+  //  public int[] currentLap;
+ //   public int[] currentCheckpoint;
+ //   public float[] distanceNextWaypoint;
+
+ //   public CarController player1;
+ //  public CarController player2;
+//    public GameObject firstPlace;
+
+
+   // float t;
+
+
+ //   private int i = 0;
+
+
+    //This is a nice way of not updating every damn frame but rather 1,5 seconds.
+    public void ManualUpdate()
+    {
+        for (int i = 0; i < allCars.Count; i++)
+        {
+            playerLaps[i].text = "LAP: " + allCars[i].currentLap.ToString() + " / " + maxLap.ToString();
+            if(allCars[i].currentLap == maxLap)
+            {
+                finishedCars[i] = true;
+                IsFinished();
+                allCars[i].enabled = false;
+                goCounter = true;
+            }
+            carOrder[allCars[i].GetCarPosition(allCars.ToArray()) - 1] = allCars[i];
+            positionImages[allCars[i].GetCarPosition(allCars.ToArray()) - 1].sprite = allCars[i].emblem;
+
+
 
 
         }
     }
 
 
-    IEnumerator Countdown()
+    public void IsFinished()
+    {
+        for (int i = 0; i < finishedCars.Length; ++i)
+        {
+            if (finishedCars[i] == false)
+            {
+                return;
+            }
+            
+
+        }
+        OnWin();
+    }
+
+
+    private void FixedUpdate()
     {
 
-        text.text = "3";
+        if(showTime)
+        {
+            elapsedTime = Time.time - startTime;
+            TimePlaying.text = (elapsedTime / 60).ToString("00") + ":" + (elapsedTime % 60).ToString("00");
+        }
+
+       if(goCounter)
+        {
+            counter = counter - Time.deltaTime;
+            counterText.text = "Remainging time: " + (counter / 60).ToString("00") + ":" + (counter % 60).ToString("00");
+
+            if (counter <= 0)
+            {
+                
+               // show menu, new game can be played OnMenu();
+                goCounter = false;
+            }
+
+        }
+       
+
+
+
+    }
+
+    public void OnPause()
+    {
+        menuManager.enabled = true;
+        menuManager.isPaused = true;
+        enabled = false;
+
+    }
+
+    public void OnWin()
+    {
+        SceneManager.LoadSceneAsync(0);
+    }
+
+    public IEnumerator Countdown()
+    {
+
+        BeginTimer.text = "3";
         yield return new WaitForSeconds(1.5f);
 
-        text.text = "2";
+        BeginTimer.text = "2";
         yield return new WaitForSeconds(1.5f);
 
 
-        text.text = "1";
+        BeginTimer.text = "1";
         yield return new WaitForSeconds(1.5f);
 
-        text.text = "GO";
+        BeginTimer.text = "GO";
         yield return new WaitForSeconds(1.5f);
 
-        text.text = "";
-        print("Test");
+        BeginTimer.text = "";
 
-        foreach (SimpleCarController car in allCars)
+        foreach (CarController car in allCars)
             car.enabled = true;
 
-        mainCanvasItems[1].SetActive(false);
         showTime = true;
+
         startTime = Time.time;
 
 
@@ -331,12 +303,7 @@ public class GameManager : MonoBehaviour
 
     }
 
-    public void OnQuit()
-    {
-        Application.Quit();
-
-    }
-
+/*
     public GameObject GrabNewWaypoint(int i)
     {
 
@@ -347,4 +314,5 @@ public class GameManager : MonoBehaviour
             return checkPoints[i + 1];
 
     }
+    */
 }

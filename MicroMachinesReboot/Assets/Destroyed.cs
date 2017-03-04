@@ -8,7 +8,7 @@ public class Destroyed : MonoBehaviour {
     {
         if(collision.transform.tag == "Player")
         {
-            collision.gameObject.GetComponent<SimpleCarController>().Destroyed();
+            collision.gameObject.GetComponent<CarController>().Destroyed();
         }
     }
 }

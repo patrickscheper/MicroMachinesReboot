@@ -25,14 +25,14 @@ public class Checkpoint : MonoBehaviour {
     {
 
 
-        SimpleCarController SCC = other.GetComponent<SimpleCarController>();
+        CarController SCC = other.GetComponent<CarController>();
 
         if (currentWaypoint == 1)
             SCC.ResetLapCounter();
 
         SCC.currentCheckpoint = currentWaypoint;
 
-        SCC.checkpoints[currentWaypoint] = true;
+        SCC.checkpointChecks[currentWaypoint] = true;
 
         SCC.IsNewLap();
 

@@ -1,24 +1,25 @@
 ﻿using UnityEngine;
 
-public class SimpleCarController : MonoBehaviour
+public class CarController : MonoBehaviour
 {
+
     public int currentCheckpoint;
     public int currentLap;
     public Transform lastWaypoint;
-    public bool[] checkpoints;
-    public int nbWaypoint; //Set the amount of Waypoints
+    public bool[] checkpointChecks;
 
-    private static int WAYPOINT_VALUE = 100;
-    private static int LAP_VALUE = 10000;
-    private int cpt_waypoint = 0;
+    public ParticleSystem victoryParticles;
+
+    private static int checkPointValue = 100;
+    private static int lapValue = 10000;
 
     public Sprite emblem;
 
-    public int m_PlayerNumber;
-    public float m_Speed = 12f;
-    public float m_TurnSpeed = 180f;
+    public int playerNumber;
+    public float speed = 12f;
+    public float turnSpeed = 180f;
 
-    public float DeathZone = -0.1f;
+    public float deathZone = -0.1f;
     public float AirZone;
 
     public GameObject cameraParent;
@@ -29,33 +30,31 @@ public class SimpleCarController : MonoBehaviour
     public GameObject waypoint;
     private Quaternion oldRotation;
 
-    private string m_MovementAxisName;
-    private string m_TurnAxisName;
-    private float m_MovementInputValue;
-    private float m_TurnInputValue;
+    private string movementAxisName;
+    private string turnAxisName;
+    private float movementInputValue;
+    private float turnInputValue;
 
-    private Rigidbody m_Rigidbody;
+    private Rigidbody rb;
 
     private void Awake()
     {
         currentCheckpoint = 0;
         currentLap = 0;
-        cpt_waypoint = 0;
-        checkpoints = new bool[nbWaypoint];
-        m_Rigidbody = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
 
     }
 
     public float GetDistance()
     {
-        return (transform.position - lastWaypoint.position).magnitude + currentCheckpoint * WAYPOINT_VALUE + currentLap * LAP_VALUE;
+        return (transform.position - lastWaypoint.position).magnitude + currentCheckpoint * checkPointValue + currentLap * lapValue;
     }
 
-    public int GetCarPosition(SimpleCarController[] allCars)
+    public int GetCarPosition(CarController[] allCars)
     {
         float distance = GetDistance();
         int position = 1;
-        foreach (SimpleCarController car in allCars)
+        foreach (CarController car in allCars)
         {
             if (car.GetDistance() > distance)
                 position++;
@@ -69,37 +68,42 @@ public class SimpleCarController : MonoBehaviour
 private void OnEnable()
     {
         waypoint.transform.parent = null;
-        m_Rigidbody.isKinematic = false;
+        rb.isKinematic = false;
 
-        m_MovementInputValue = 0f;
-        m_TurnInputValue = 0f;
+        movementInputValue = 0f;
+        turnInputValue = 0f;
 
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Killer")
+        if (other.tag == "Trap")
+        {
+            print("Will not place a waypoint here, too close to trap");
             CancelInvoke();
+        }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.tag == "Killer")
+        if (other.tag == "Trap")
+        {
             InvokeRepeating("CreateNewSpawnPoint", 0, 5);
+        }
     }
 
 
     private void OnDisable()
     {
-        m_Rigidbody.isKinematic = true;
+        rb.isKinematic = true;
 
     }
 
     private void Start()
     {
         AirZone = transform.position.y + 0.01f;
-        m_MovementAxisName = "Vertical" + (1 + m_PlayerNumber);
-        m_TurnAxisName = "Horizontal" + (1 + m_PlayerNumber);
+        movementAxisName = "Vertical" + (1 + playerNumber);
+        turnAxisName = "Horizontal" + (1 + playerNumber);
 
         InvokeRepeating("CreateNewSpawnPoint", 0, 5);
 
@@ -126,23 +130,24 @@ private void OnEnable()
 
     public void IsNewLap()
     {
-        for (int i = 0; i < checkpoints.Length; ++i)
+        for (int i = 0; i < checkpointChecks.Length; ++i)
         {
-            if (checkpoints[i] == false)
+            if (checkpointChecks[i] == false)
             {
                 return;
             }
         }
 
+        victoryParticles.Play();
         currentLap += 1;
         ResetLapCounter();
     }
 
     public void ResetLapCounter()
     {
-        for (int i = 0; i < checkpoints.Length; ++i)
+        for (int i = 0; i < checkpointChecks.Length; ++i)
         {
-            checkpoints[i] = false;
+            checkpointChecks[i] = false;
         }
     }
 
@@ -160,13 +165,13 @@ private void OnEnable()
     {
 
 
-        print(m_MovementInputValue);
-        m_MovementInputValue = Input.GetAxis(m_MovementAxisName);
-        m_TurnInputValue = Input.GetAxis(m_TurnAxisName);
+        print(movementInputValue);
+        movementInputValue = Input.GetAxis(movementAxisName);
+        turnInputValue = Input.GetAxis(turnAxisName);
 
 
 
-        if (transform.position.y < DeathZone && isSpawning == false)
+        if (transform.position.y < deathZone && isSpawning == false)
         {
             Destroyed();
 
@@ -207,17 +212,17 @@ private void OnEnable()
 
     private void Move()
     {
-        if (m_MovementInputValue < 0)
+        if (movementInputValue < 0)
         {
-            Vector3 movement = transform.forward * m_MovementInputValue * (m_Speed / 2) * Time.deltaTime;
-            m_Rigidbody.MovePosition(m_Rigidbody.position + movement);
+            Vector3 movement = transform.forward * movementInputValue * (speed / 2) * Time.deltaTime;
+            rb.MovePosition(rb.position + movement);
 
         }
 
-        if (m_MovementInputValue > 0)
+        if (movementInputValue > 0)
         {
-            Vector3 movement = transform.forward * m_MovementInputValue * m_Speed * Time.deltaTime;
-            m_Rigidbody.MovePosition(m_Rigidbody.position + movement);
+            Vector3 movement = transform.forward * movementInputValue * speed * Time.deltaTime;
+            rb.MovePosition(rb.position + movement);
 
         }
 
@@ -226,11 +231,11 @@ private void OnEnable()
 
     private void Turn()
     {
-        float turn = m_TurnInputValue * m_TurnSpeed * Time.deltaTime;
+        float turn = turnInputValue * turnSpeed * Time.deltaTime;
 
         Quaternion turnRotation = Quaternion.Euler(0f, turn, 0f);
 
-        m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
+        rb.MoveRotation(rb.rotation * turnRotation);
     }
 
     private void OnCollisionStay(Collision collision)
@@ -240,7 +245,7 @@ private void OnEnable()
             Vector3 dir = collision.gameObject.transform.position - transform.position;
             dir = -dir.normalized + Vector3.up;
             print("Does this ever fucking happen?");
-            m_Rigidbody.AddForce(dir * bumpForce);
+            rb.AddForce(dir * bumpForce);
 
         }
     }
