@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Jumper : MonoBehaviour
 {
-
+    [Tooltip("This is the force that the car gets launched")]
     public float force = 250;
 
     private void OnTriggerEnter(Collider other)
